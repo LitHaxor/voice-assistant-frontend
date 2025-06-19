@@ -19,40 +19,54 @@ import type { ConnectionDetails } from "./api/connection-details/route";
 
 export default function Page() {
   const [room] = useState(new Room());
+  const [isConnecting, setIsConnecting] = useState(false);
   const searchParams = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : ""
   );
 
-  const onConnectButtonClicked = useCallback(async () => {
-    // Generate room connection details, including:
-    //   - A random Room name
-    //   - A random Participant name
-    //   - An Access Token to permit the participant to join the room
-    //   - The URL of the LiveKit server to connect to
-    //
-    // In real-world application, you would likely allow the user to specify their
-    // own participant name, and possibly to choose from existing rooms to join.
+  const connectToRoom = useCallback(async () => {
+    if (isConnecting) return;
+    setIsConnecting(true);
 
-    const url = new URL(
-      process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? "/api/connection-details",
-      typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
-    );
-    url.searchParams.set("metadata", searchParams.get("metadata") ?? "{}");
-    url.searchParams.set(
-      "userId",
-      searchParams.get("userId") ?? `participant_${Math.floor(Math.random() * 10_000)}`
-    );
-    url.searchParams.set(
-      "roomName",
-      searchParams.get("roomName") ?? `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`
-    );
-    url.searchParams.set("agentName", searchParams.get("agentName") ?? "private_vm");
-    const response = await fetch(url.toString());
-    const connectionDetailsData: ConnectionDetails = await response.json();
+    try {
+      // Generate room connection details, including:
+      //   - A random Room name
+      //   - A random Participant name
+      //   - An Access Token to permit the participant to join the room
+      //   - The URL of the LiveKit server to connect to
 
-    await room.connect(connectionDetailsData.serverUrl, connectionDetailsData.participantToken);
-    await room.localParticipant.setMicrophoneEnabled(true);
-  }, [room]);
+      const url = new URL(
+        process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? "/api/connection-details",
+        typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
+      );
+      url.searchParams.set("metadata", searchParams.get("metadata") ?? "{}");
+      url.searchParams.set(
+        "userId",
+        searchParams.get("userId") ?? `participant_${Math.floor(Math.random() * 10_000)}`
+      );
+      url.searchParams.set(
+        "roomName",
+        searchParams.get("roomName") ?? `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`
+      );
+      url.searchParams.set("agentName", searchParams.get("agentName") ?? "private_vm");
+      const response = await fetch(url.toString());
+      const connectionDetailsData: ConnectionDetails = await response.json();
+
+      await room.connect(connectionDetailsData.serverUrl, connectionDetailsData.participantToken);
+      await room.localParticipant.setMicrophoneEnabled(true);
+    } catch (error) {
+      console.error("Failed to connect to room:", error);
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [room, searchParams, isConnecting]);
+
+  useEffect(() => {
+    // Connect to room automatically when the component mounts
+    if (typeof window !== "undefined") {
+      connectToRoom();
+    }
+  }, []);
 
   useEffect(() => {
     room.on(RoomEvent.MediaDevicesError, onDeviceFailure);
@@ -63,63 +77,61 @@ export default function Page() {
   }, [room]);
 
   return (
-    <main data-lk-theme="default" className="h-full grid content-center bg-[var(--lk-bg)]">
+    <main data-lk-theme="default" className="h-full grid content-center bg-[#343333]">
       <RoomContext.Provider value={room}>
-        <div className="lk-room-container max-w-[1024px] w-[90vw] mx-auto max-h-[90vh]">
-          <SimpleVoiceAssistant onConnectButtonClicked={onConnectButtonClicked} />
+        <div className="lk-room-container max-w-[1024px] w-[90vw] mx-auto max-h-[90vh] bg-[#343333]">
+          <SimpleVoiceAssistant connectToRoom={connectToRoom} />
         </div>
       </RoomContext.Provider>
     </main>
   );
 }
 
-function SimpleVoiceAssistant(props: { onConnectButtonClicked: () => void }) {
+function SimpleVoiceAssistant({ connectToRoom }: Readonly<{ connectToRoom: () => Promise<void> }>) {
   const { state: agentState } = useVoiceAssistant();
 
   return (
-    <>
-      <AnimatePresence mode="wait">
-        {agentState === "disconnected" ? (
+    <AnimatePresence mode="wait">
+      {agentState === "disconnected" ? (
+        <motion.div
+          key="disconnected"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
+          className="grid items-center justify-center h-full bg-[#343333]"
+        >
+          {/* Auto-connecting indicator rather than a button */}
           <motion.div
-            key="disconnected"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
-            className="grid items-center justify-center h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="text-white text-center"
           >
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              className="uppercase px-4 py-2 bg-white text-black rounded-md"
-              onClick={() => props.onConnectButtonClicked()}
-            >
-              Start a conversation
-            </motion.button>
+            Connecting to voice assistant...
           </motion.div>
-        ) : (
-          <motion.div
-            key="connected"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
-            className="flex flex-col items-center gap-4 h-full"
-          >
-            <AgentVisualizer />
-            <div className="flex-1 w-full">
-              <TranscriptionView />
-            </div>
-            <div className="w-full">
-              <ControlBar onConnectButtonClicked={props.onConnectButtonClicked} />
-            </div>
-            <RoomAudioRenderer />
-            <NoAgentNotification state={agentState} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="connected"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
+          className="flex flex-col items-center gap-4 h-full bg-[#343333]"
+        >
+          <AgentVisualizer />
+          <div className="flex-1 w-full">
+            <TranscriptionView />
+          </div>
+          <div className="w-full">
+            <ControlBar connectToRoom={connectToRoom} />
+          </div>
+          <RoomAudioRenderer />
+          <NoAgentNotification state={agentState} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -134,37 +146,24 @@ function AgentVisualizer() {
     );
   }
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-[300px] w-full bg-[#343333]">
       <BarVisualizer
         state={agentState}
         barCount={5}
         trackRef={audioTrack}
-        className="agent-visualizer"
+        className="agent-visualizer bg-[#343333]"
         options={{ minHeight: 24 }}
       />
     </div>
   );
 }
 
-function ControlBar(props: { onConnectButtonClicked: () => void }) {
+function ControlBar({ connectToRoom }: Readonly<{ connectToRoom: () => Promise<void> }>) {
   const { state: agentState } = useVoiceAssistant();
 
   return (
-    <div className="relative h-[60px]">
-      <AnimatePresence>
-        {agentState === "disconnected" && (
-          <motion.button
-            initial={{ opacity: 0, top: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, top: "-10px" }}
-            transition={{ duration: 1, ease: [0.09, 1.04, 0.245, 1.055] }}
-            className="uppercase absolute left-1/2 -translate-x-1/2 px-4 py-2 bg-white text-black rounded-md"
-            onClick={() => props.onConnectButtonClicked()}
-          >
-            Start a conversation
-          </motion.button>
-        )}
-      </AnimatePresence>
+    <div className="relative h-[60px] bg-[#343333]">
+      {/* Removed button for starting conversation - auto-connects instead */}
       <AnimatePresence>
         {agentState !== "disconnected" && agentState !== "connecting" && (
           <motion.div
@@ -172,7 +171,7 @@ function ControlBar(props: { onConnectButtonClicked: () => void }) {
             animate={{ opacity: 1, top: 0 }}
             exit={{ opacity: 0, top: "-10px" }}
             transition={{ duration: 0.4, ease: [0.09, 1.04, 0.245, 1.055] }}
-            className="flex h-8 absolute left-1/2 -translate-x-1/2  justify-center"
+            className="flex h-8 absolute left-1/2 -translate-x-1/2  justify-center bg-[#343333]"
           >
             <VoiceAssistantControlBar controls={{ leave: false }} />
             <DisconnectButton>

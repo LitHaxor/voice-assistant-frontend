@@ -13,8 +13,37 @@
 
 .lk-agent-control-bar {
   @apply border-t-0 p-0 h-min mr-4;
+  background-color: #5D8AA8;
+
+}
+
+.lk-agent-control-bar > .lk-button-group {
+  background-color: #5D8AA8 !important;
+}
+
+/* Add button color styles */
+.lk-button {
+  background-color: #5D8AA8 !important;
+  color: white;
+}
+
+.lk-button:hover {
+  background-color: #4c7995 !important;
+}
+
+.lk-button-group .lk-button {
+  background-color: #5D8AA8 !important;
+  border-radius: 48px;
+}
+
+.lk-button-group {
+  border-radius: 96px !important;
+}
+/* Style for menu buttons */
+.lk-button-menu {
+  background-color: #5D8AA8 !important;
 }
 
 .lk-disconnect-button {
-  @apply h-[36px] hover:bg-[#6b221a] hover:text-[white] bg-[#31100c] border-[#6b221a];
+  @apply h-[36px] hover:bg-[#DA2C38] hover:text-[white] bg-[#31100c] border-[#6b221a];
 }

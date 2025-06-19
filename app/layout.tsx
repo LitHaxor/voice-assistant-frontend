@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full ${publicSans400.className}`}>
+    <html lang="en" className={`h-full ${publicSans400.className} bg-slate-950`}>
       <body className="h-full">{children}</body>
     </html>
   );
