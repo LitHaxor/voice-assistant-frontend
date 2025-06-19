@@ -19,6 +19,9 @@ import type { ConnectionDetails } from "./api/connection-details/route";
 
 export default function Page() {
   const [room] = useState(new Room());
+  const searchParams = new URLSearchParams(
+    typeof window !== "undefined" ? window.location.search : ""
+  );
 
   const onConnectButtonClicked = useCallback(async () => {
     // Generate room connection details, including:
@@ -32,8 +35,18 @@ export default function Page() {
 
     const url = new URL(
       process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? "/api/connection-details",
-      window.location.origin
+      typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
     );
+    url.searchParams.set("metadata", searchParams.get("metadata") ?? "{}");
+    url.searchParams.set(
+      "userId",
+      searchParams.get("userId") ?? `participant_${Math.floor(Math.random() * 10_000)}`
+    );
+    url.searchParams.set(
+      "roomName",
+      searchParams.get("roomName") ?? `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`
+    );
+    url.searchParams.set("agentName", searchParams.get("agentName") ?? "private_vm");
     const response = await fetch(url.toString());
     const connectionDetailsData: ConnectionDetails = await response.json();
 

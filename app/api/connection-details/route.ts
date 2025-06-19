@@ -1,3 +1,4 @@
+import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol";
 import { AccessToken, AccessTokenOptions, VideoGrant } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 
@@ -16,7 +17,7 @@ export type ConnectionDetails = {
   participantToken: string;
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     if (LIVEKIT_URL === undefined) {
       throw new Error("LIVEKIT_URL is not defined");
@@ -28,12 +29,25 @@ export async function GET() {
       throw new Error("LIVEKIT_API_SECRET is not defined");
     }
 
+    // Get the URL to parse query parameters if needed
+    const url = new URL(request.url);
+    const roomId = url.searchParams.get("roomName");
+    const userId =
+      url.searchParams.get("userId") || `participant_${Math.floor(Math.random() * 10_000)}`;
+    const agentName = url.searchParams.get("agentName") || "default_agent";
+
     // Generate participant token
-    const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
-    const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
+    const participantIdentity = userId;
+    const roomName = roomId ?? `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
+
+    // Default metadata if none provided
+    const metadata = url.searchParams.get("metadata") || "{}";
+
     const participantToken = await createParticipantToken(
-      { identity: participantIdentity },
-      roomName
+      { identity: participantIdentity, metadata: JSON.stringify({ test: "test" }) },
+      roomName,
+      metadata,
+      agentName
     );
 
     // Return connection details
@@ -55,7 +69,12 @@ export async function GET() {
   }
 }
 
-function createParticipantToken(userInfo: AccessTokenOptions, roomName: string) {
+function createParticipantToken(
+  userInfo: AccessTokenOptions,
+  roomName: string,
+  agentMetadata: string,
+  agentName: string = "private_vm"
+) {
   const at = new AccessToken(API_KEY, API_SECRET, {
     ...userInfo,
     ttl: "15m",
@@ -68,5 +87,14 @@ function createParticipantToken(userInfo: AccessTokenOptions, roomName: string) 
     canSubscribe: true,
   };
   at.addGrant(grant);
+  at.roomConfig = new RoomConfiguration({
+    name: roomName,
+    agents: [
+      new RoomAgentDispatch({
+        agentName: agentName,
+        metadata: agentMetadata,
+      }),
+    ],
+  });
   return at.toJwt();
 }
