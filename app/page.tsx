@@ -81,7 +81,7 @@ export default function Page() {
   return (
     <main
       data-lk-theme="default"
-      className="h-screen flex items-center justify-center bg-[#343333]"
+      className="h-[100dvh] flex items-center justify-center bg-[#343333]"
     >
       <RoomContext.Provider value={room}>
         <div className="lk-room-container max-w-[1024px] w-full mx-auto h-full bg-[#343333]">
@@ -145,13 +145,13 @@ function AgentVisualizer() {
 
   if (videoTrack) {
     return (
-      <div className="h-[512px] w-[512px] rounded-lg overflow-hidden">
+      <div className="h-auto w-full max-h-[512px] max-w-[512px] rounded-lg overflow-hidden aspect-square">
         <VideoTrack trackRef={videoTrack} />
       </div>
     );
   }
   return (
-    <div className="h-[300px] w-full bg-[#343333]">
+    <div className="h-[200px] md:h-[300px] w-full bg-[#343333]">
       <BarVisualizer
         state={agentState}
         barCount={5}
