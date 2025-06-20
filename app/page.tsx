@@ -20,11 +20,12 @@ import type { ConnectionDetails } from "./api/connection-details/route";
 export default function Page() {
   const [room] = useState(new Room());
   const [isConnecting, setIsConnecting] = useState(false);
-  const searchParams = new URLSearchParams(
-    typeof window !== "undefined" ? window.location.search : ""
-  );
 
   const connectToRoom = useCallback(async () => {
+    // Create searchParams inside the callback to avoid dependencies changing on every render
+    const searchParams = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : ""
+    );
     if (isConnecting) return;
     setIsConnecting(true);
 
@@ -59,13 +60,14 @@ export default function Page() {
     } finally {
       setIsConnecting(false);
     }
-  }, [room, searchParams, isConnecting]);
+  }, [room, isConnecting]);
 
   useEffect(() => {
     // Connect to room automatically when the component mounts
     if (typeof window !== "undefined") {
       connectToRoom();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -80,14 +82,14 @@ export default function Page() {
     <main data-lk-theme="default" className="h-full grid content-center bg-[#343333]">
       <RoomContext.Provider value={room}>
         <div className="lk-room-container max-w-[1024px] w-[90vw] mx-auto max-h-[90vh] bg-[#343333]">
-          <SimpleVoiceAssistant connectToRoom={connectToRoom} />
+          <SimpleVoiceAssistant />
         </div>
       </RoomContext.Provider>
     </main>
   );
 }
 
-function SimpleVoiceAssistant({ connectToRoom }: Readonly<{ connectToRoom: () => Promise<void> }>) {
+function SimpleVoiceAssistant() {
   const { state: agentState } = useVoiceAssistant();
 
   return (
@@ -125,7 +127,7 @@ function SimpleVoiceAssistant({ connectToRoom }: Readonly<{ connectToRoom: () =>
             <TranscriptionView />
           </div>
           <div className="w-full">
-            <ControlBar connectToRoom={connectToRoom} />
+            <ControlBar />
           </div>
           <RoomAudioRenderer />
           <NoAgentNotification state={agentState} />
@@ -158,7 +160,7 @@ function AgentVisualizer() {
   );
 }
 
-function ControlBar({ connectToRoom }: Readonly<{ connectToRoom: () => Promise<void> }>) {
+function ControlBar() {
   const { state: agentState } = useVoiceAssistant();
 
   return (
