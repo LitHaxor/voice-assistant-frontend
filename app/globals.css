@@ -14,7 +14,7 @@
 .lk-agent-control-bar {
   @apply border-t-0 p-0 h-min mr-4;
   background-color: #5D8AA8;
-
+  border-radius: 9999px;
 }
 
 .lk-agent-control-bar > .lk-button-group {
@@ -33,11 +33,11 @@
 
 .lk-button-group .lk-button {
   background-color: #5D8AA8 !important;
-  border-radius: 48px;
+  border-radius: 9999px;
 }
 
 .lk-button-group {
-  border-radius: 96px !important;
+  border-radius: 9999px !important;
 }
 /* Style for menu buttons */
 .lk-button-menu {
@@ -45,10 +45,14 @@
 }
 
 .lk-disconnect-button {
-  @apply h-[36px] hover:bg-[#DA2C38] hover:text-[white] bg-[#31100c] border-[#6b221a];
+  @apply h-[40px] w-[40px] rounded-full hover:bg-[#DA2C38] hover:text-[white] bg-[#31100c] border-[#6b221a];
 }
 
 /* Hide the Start Audio button */
 .lk-start-audio-button {
   display: none !important;
+}
+
+.lk-device-menu {
+  z-index: 100 !important;
 }
