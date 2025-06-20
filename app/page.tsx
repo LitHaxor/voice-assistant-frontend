@@ -79,9 +79,12 @@ export default function Page() {
   }, [room]);
 
   return (
-    <main data-lk-theme="default" className="h-full grid content-center bg-[#343333]">
+    <main
+      data-lk-theme="default"
+      className="h-screen flex items-center justify-center bg-[#343333]"
+    >
       <RoomContext.Provider value={room}>
-        <div className="lk-room-container max-w-[1024px] w-[90vw] mx-auto max-h-[90vh] bg-[#343333]">
+        <div className="lk-room-container max-w-[1024px] w-full mx-auto h-full bg-[#343333]">
           <SimpleVoiceAssistant />
         </div>
       </RoomContext.Provider>
@@ -123,10 +126,10 @@ function SimpleVoiceAssistant() {
           className="flex flex-col items-center gap-4 h-full bg-[#343333]"
         >
           <AgentVisualizer />
-          <div className="flex-1 w-full">
+          <div className="flex-1 w-full min-h-0">
             <TranscriptionView />
           </div>
-          <div className="w-full relative z-20">
+          <div className="w-full relative z-20" style={{ transform: "translateZ(0)" }}>
             <ControlBar />
           </div>
           <RoomAudioRenderer />
